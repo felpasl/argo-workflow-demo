@@ -1,0 +1,88 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: whalesay-template
+spec:
+  entrypoint: runner
+  arguments:
+    parameters:
+    - name: message
+      value: hello world
+  templates:
+  - name: runner
+    steps:
+    - - name: run
+        template: run
+        arguments:
+          parameters:
+          - name: message
+            value: "{{inputs.parameters.message}}"
+    - - name: run-2
+        templateRef: 
+          name: whalesay-template-2
+          template: runner-2
+        arguments:
+          parameters:
+          - name: message
+            value: "{{inputs.parameters.message}}"
+  - name: run
+    inputs:
+      parameters:
+      - name: message       
+    container:
+      image: docker/whalesay
+      command: [ cowsay ]
+      args: [ "from template 1: {{inputs.parameters.message}}" ]
+---
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: whalesay-template-2
+spec:
+  entrypoint: runner-2
+  arguments:
+    parameters:
+    - name: message
+      value: hello world
+  templates:
+  - name: runner-2
+    inputs:
+      parameters:
+      - name: message       
+    container:
+      image: docker/whalesay
+      command: [ cowsay ]
+      args: [ "from template 2: {{inputs.parameters.message}}" ]
+            
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: workflow1-
+  labels:
+    env: "test"
+spec:
+  entrypoint: runner
+  arguments:
+    parameters:
+    - name: outer-message
+      value: hello CRUEL world
+  templates:
+    - name: runner
+      steps:
+      - - name: template-run
+          templateRef:
+            name: whalesay-template # template name from metadata
+            template: runner # inside entrypoint name from template
+          arguments:
+            parameters:
+              - name: message
+                value: "{{workflow.parameters.outer-message}}"
+      - - name: template-run2
+          templateRef:
+            name: whalesay-template
+            template: runner
+          arguments:
+            parameters:
+              - name: message
+                value: hello MAD world
