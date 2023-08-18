@@ -1,0 +1,16 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowEventBinding
+metadata:
+  name: event-consumer
+spec:
+  event:
+    # metadata header name must be lowercase to match in selector
+    selector: payload.message != "" && discriminator == "my-event"
+  submit:
+    workflowTemplateRef:
+      name: fill-postgres
+    arguments:
+      parameters:
+      - name: message
+        valueFrom:
+          event: payload.message
