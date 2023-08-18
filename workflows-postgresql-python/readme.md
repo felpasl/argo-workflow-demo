@@ -81,13 +81,7 @@ spec:
 kubectl apply -f event.yaml
 
 # Create a role with necessary permissions
-kubectl create role app-role --verb=list,update --resource=workflows.argoproj.io
-
-# Create a service account
-kubectl create sa app-sa
-
-# Bind the role to the service account
-kubectl create rolebinding app-role-binding --role=app-role --serviceaccount=default:app-sa
+kubectl apply -f roles.yaml
 
 # Create a Kubernetes secret for the service account token
 kubectl apply -f - <<EOF
@@ -107,3 +101,8 @@ ARGO_TOKEN="Bearer $(kubectl get secret app-sa.service-account-token -o=jsonpath
 curl http://localhost:2746/api/v1/events/default/my-event -H "Authorization: $ARGO_TOKEN" -d '{"message": "hello events"}'
 
 ```
+
+# Event-Source
+
+TODO: Event Source Docs
+
