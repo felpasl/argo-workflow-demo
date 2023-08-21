@@ -24,6 +24,9 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: workflows-postgresql/dockerfile
     permissions:
       contents: read
       packages: write
