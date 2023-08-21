@@ -21,12 +21,16 @@ metadata:
   name: fill-postgres-python
 spec:
   entrypoint: fill-postgres
+  arguments:
+    parameters:
+    - name: message
+      value: |
+        { "message": "hello" }
   templates:
   - name: fill-postgres
     inputs:
       parameters:
       - name: message   
-        value: "hello world"
     steps:
     - - name: wait-init
         templateRef:
@@ -36,19 +40,47 @@ spec:
         template: run-postgres
         arguments:
           parameters:
-          - name: sql
-            value: "CREATE TABLE IF NOT EXISTS messages (message VARCHAR(255)); INSERT INTO messages (message) VALUES ('{{inputs.parameters.message}}');"
+          - name: sql-create
+            value: "CREATE TABLE IF NOT EXISTS messages (message VARCHAR(255));"
+          - name: sql-insert
+            value: "INSERT INTO messages (message) VALUES (%(message)s);"
+          - name: sql-values
+            value: "{{inputs.parameters.message}}"
         
   - name: run-postgres
     inputs:
       parameters:
-      - name: sql     
-    container: 
-      image: postgres:alpine
+      - name: sql-create
+      - name: sql-insert    
+      - name: sql-values 
+    script: 
+      image: ghcr.io/felpasl/python-psycopg2
       envFrom:
       - secretRef:
           name: postgres-secret
-      command: [ sh, -c ]
-      args: ['PGPASSWORD=$(POSTGRES_PASSWORD) psql -U $(POSTGRES_USER) -h $(POSTGRES_HOST) -d $(POSTGRES_DB) -p $(POSTGRES_PORT) -c "{{inputs.parameters.sql}}"']
-      
+      command: [python]
+      source: |
+        import psycopg2
+        import os
+        p_user = os.getenv('POSTGRES_USER')
+        p_password = os.getenv('POSTGRES_PASSWORD')
+        p_host = os.getenv('POSTGRES_HOST')
+        p_port = os.getenv('POSTGRES_PORT')
+        p_db = os.getenv('POSTGRES_DB')
+        conn_string = f"postgresql://{p_user}:{p_password}@{p_host}:{p_port}/{p_db}"
+        conn = psycopg2.connect(conn_string)
+        sql = "{{inputs.parameters.sql-create}}"
+        cursor = conn.cursor()
+        cursor.execute(sql)
+        print(cursor.statusmessage)
+
+        sql = "{{inputs.parameters.sql-insert}}"
+        param = {{inputs.parameters.sql-values}}
+        cursor.execute(sql, param)
+        print(cursor.statusmessage)
+
+        
+        conn.commit()
+        cursor.close()
+        conn.close()
 
