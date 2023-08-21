@@ -1,0 +1,54 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: postgres-wait-init
+spec:
+  entrypoint: wait-init
+  templates:
+  - name: wait-init   
+    container:
+      image: postgres
+      envFrom:
+      - secretRef:
+          name: postgres-secret
+      command: ['sh', '-c', 
+          'until pg_isready -h $(POSTGRES_HOST) -d $(POSTGRES_DB) -p $(POSTGRES_PORT) -U $(POSTGRES_USER); 
+          do echo waiting for database; sleep 2; done;']
+---
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: fill-postgres-python
+spec:
+  entrypoint: fill-postgres
+  templates:
+  - name: fill-postgres
+    inputs:
+      parameters:
+      - name: message   
+        value: "hello world"
+    steps:
+    - - name: wait-init
+        templateRef:
+          name: postgres-wait-init
+          template: wait-init
+    - - name: fill-table
+        template: run-postgres
+        arguments:
+          parameters:
+          - name: sql
+            value: "CREATE TABLE IF NOT EXISTS messages (message VARCHAR(255)); INSERT INTO messages (message) VALUES ('{{inputs.parameters.message}}');"
+        
+  - name: run-postgres
+    inputs:
+      parameters:
+      - name: sql     
+    container: 
+      image: postgres:alpine
+      envFrom:
+      - secretRef:
+          name: postgres-secret
+      command: [ sh, -c ]
+      args: ['PGPASSWORD=$(POSTGRES_PASSWORD) psql -U $(POSTGRES_USER) -h $(POSTGRES_HOST) -d $(POSTGRES_DB) -p $(POSTGRES_PORT) -c "{{inputs.parameters.sql}}"']
+      
+

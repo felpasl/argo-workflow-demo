@@ -1,0 +1,18 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: scripts-python-
+spec:
+  entrypoint: python-script-example
+  templates:
+  - name: python-script-example
+    steps:
+    - - name: generate
+        template: gen-guid-python
+  - name: gen-guid-python
+    script:
+      image: python:alpine
+      command: [python]
+      source: |
+        import uuid
+        print(uuid.uuid4())
