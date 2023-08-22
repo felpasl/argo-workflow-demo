@@ -1,3 +1,7 @@
+# This YAML file defines an EventSource and Sensor for a webhook that listens to POST requests on port 12000 and triggers an Argo Workflow.
+# The EventSource listens to the /example endpoint and only accepts POST requests.
+# The Sensor depends on the EventSource and triggers an Argo Workflow when it receives an event from the EventSource.
+# The triggered Argo Workflow uses the fill-postgres workflow template and passes a message parameter from the event body as an argument.
 apiVersion: argoproj.io/v1alpha1
 kind: EventSource
 metadata:
@@ -17,6 +21,8 @@ spec:
       # HTTP request method to allow. In this case, only POST requests are accepted
       method: POST
 ---
+# This YAML file defines a Sensor resource named "webhook" that listens for an event named "example" from an event source also named "webhook".
+# When the event is received, it triggers an Argo Workflow named "fill-postgres" with a generated name "event-fill-postgres-" and passes a parameter named "message" with the value of the "body.message" field from the received event.
 apiVersion: argoproj.io/v1alpha1
 kind: Sensor
 metadata:

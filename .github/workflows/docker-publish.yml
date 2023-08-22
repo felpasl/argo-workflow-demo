@@ -23,9 +23,6 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: workflows-postgresql/dockerfile
     permissions:
       contents: read
       packages: write
@@ -48,3 +45,10 @@ jobs:
         run: |
              docker build . --tag ghcr.io/${{ github.actor }}/python-psycopg2:latest
              docker push ghcr.io/${{ github.actor }}/python-psycopg2:latest
+        working-directory: workflows-postgresql/dockerfile
+
+      - name: Build the hello-docker Docker image
+        run: |
+             docker build . --tag ghcr.io/${{ github.actor }}/python-insert:latest
+             docker push ghcr.io/${{ github.actor }}/python-insert:latest
+        working-directory: workflows-postgresql/python-insert

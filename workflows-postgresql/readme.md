@@ -47,6 +47,7 @@ Utilize Python in conjunction with a PostgreSQL framework, or alternatively, sel
 
 The following workflow or demonstration intentionally ignores considerations and safeguards against SQL injection for the sole purpose of providing an educational example. SQL injection is a serious security vulnerability that can lead to unauthorized access, data breaches, and other malicious activities in real-world applications.
 
+
 # Basic Events
 
 https://argoproj.github.io/argo-workflows/events/
@@ -104,5 +105,33 @@ curl http://localhost:2746/api/v1/events/default/my-event -H "Authorization: $AR
 
 # Event-Source
 
-TODO: Event Source Docs
+## Argo Events
+
+Argo Events is an event-driven workflow automation framework for Kubernetes. It allows you to trigger K8s objects, Argo Workflows, Serverless workloads, and more based on events from various sources such as webhooks, S3, schedules, messaging queues, GCP Pub/Sub, SNS, SQS, and others.
+
+In this sample, an API call is used to trigger a workflow template.
+
+For more information on how to use Argo Events, please refer to the documentation.
+
+https://argoproj.github.io/argo-events/
+
+
+## Install
+
+To install Argo Events, please refer to the [installation documentation](https://argoproj.github.io/argo-events/installation/).
+
+**Important:** An event bus must be deployed in the same namespace as the event source and sensor.
+
+## Event Source YAML File
+This YAML file defines an event source and a sensor that listens for events from the source and triggers an Argo Workflow when an event is received.
+
+### Event Source
+The event source is defined in the first part of the YAML file. It is named "webhook" and listens for an event named "example" on port 12000 using the HTTP POST method. When an event is received, it triggers a Sensor resource named "webhook" in the second part of the YAML file.
+
+### Sensor
+The Sensor resource is defined in the second part of the YAML file. It is named "webhook" and has a template that specifies a service account named "app-sa". The Sensor has a dependency on an event source named "webhook" and an event named "example". When the event is received, it triggers a trigger named "argo-workflow-trigger".
+
+#### Trigger
+The trigger is defined in the "triggers" section of the Sensor resource. It is named "argo-workflow-trigger" and specifies an Argo Workflow operation of "submit". The trigger passes a parameter named "message" to the Argo Workflow with the value of the "body.message" field from the received event.
+
 

@@ -14,11 +14,15 @@ spec:
               parameters:
                 - name: message
                   value: "{{item}}"
+            
             withItems:
               - "hello world"
               - "goodbye world"
     - name: whalesay
+      inputs:
+        parameters:
+          - name: message
       container:
         image: docker/whalesay
         command: [ cowsay ]
-        args: [ "hello world" ]
+        args: [ "{{inputs.parameters.message}}" ]

@@ -1,0 +1,57 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: postgres-wait-init
+spec:
+  entrypoint: wait-init
+  templates:
+  - name: wait-init   
+    container:
+      image: postgres
+      envFrom:
+      - secretRef:
+          name: postgres-secret
+      command: ['sh', '-c', 
+          'until pg_isready -h $(POSTGRES_HOST) -d $(POSTGRES_DB) -p $(POSTGRES_PORT) -U $(POSTGRES_USER); 
+          do echo waiting for database; sleep 2; done;']
+---
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: fill-postgres-python-image
+spec:
+  entrypoint: fill-postgres
+  arguments:
+    parameters:
+    - name: message
+      value: |
+        { "message": "hello" }
+  templates:
+  - name: fill-postgres
+    inputs:
+      parameters:
+      - name: message   
+    steps:
+    - - name: wait-init
+        templateRef:
+          name: postgres-wait-init
+          template: wait-init
+    - - name: fill-table
+        template: run-postgres
+        arguments:
+          parameters:
+          - name: sql-values
+            value: "{{inputs.parameters.message}}"
+        
+  - name: run-postgres
+    inputs:
+      parameters:  
+      - name: oportunitId
+      - name: status
+    container: 
+      image: ghcr.io/felpasl/python-insert
+      envFrom:
+      - secretRef:
+          name: postgres-secret
+      command: [python]
+      args: ["/insert.py", "{{inputs.parameters.sql-values}}"]
