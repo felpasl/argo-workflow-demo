@@ -33,6 +33,7 @@ class InsertMessage:
 if __name__ == '__main__':
     insert_message = InsertMessage()
     insert_message.create_table()
-    message = json.loads(sys.argv[0])
+    print(sys.argv[1])
+    message = json.loads(sys.argv[1])
     insert_message.insert_message(message)
     insert_message.close_connection()
