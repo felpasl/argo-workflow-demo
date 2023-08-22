@@ -2,6 +2,7 @@ import psycopg2
 import os
 import sys
 import json
+from pandas import json_normalize
 
 class InsertMessage:
     def __init__(self):
@@ -34,6 +35,6 @@ if __name__ == '__main__':
     insert_message = InsertMessage()
     insert_message.create_table()
     print(sys.argv[1])
-    message = json.loads(sys.argv[1])
+    message = json_normalize(json.loads(sys.argv[1]))
     insert_message.insert_message(message)
     insert_message.close_connection()
