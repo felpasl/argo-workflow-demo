@@ -46,8 +46,7 @@ spec:
   - name: run-postgres
     inputs:
       parameters:  
-      - name: oportunitId
-      - name: status
+      - name: sql-values
     container: 
       image: ghcr.io/felpasl/python-insert
       envFrom:
