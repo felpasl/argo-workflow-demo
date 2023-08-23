@@ -2,17 +2,38 @@ import os
 import sys
 import json
 from pandas import json_normalize
+from sqlalchemy import create_engine, Table, Column, Integer, String, MetaData
+from dotenv import load_dotenv
 
 class InsertMessage:
-    
+    def __init__(self):
+        load_dotenv()
+        self.p_user = os.getenv('POSTGRES_USER')
+        self.p_password = os.getenv('POSTGRES_PASSWORD')
+        self.p_host = os.getenv('POSTGRES_HOST')
+        self.p_port = os.getenv('POSTGRES_PORT')
+        self.p_db = os.getenv('POSTGRES_DB')
+        self.conn_string = f"postgresql://{self.p_user}:{self.p_password}@{self.p_host}:{self.p_port}/{self.p_db}"
+        
+        print(self.conn_string)
+        self.engine = create_engine(self.conn_string)
+        self.metadata = MetaData()
+        self.conn = self.engine.connect()
+
     def create_table(self):
-        sql = "CREATE TABLE IF NOT EXISTS messages (message VARCHAR(255));"
-        print(sql)
+        messageTable = Table('messages', 
+                             self.metadata,
+                             Column('message', String))
+        self.metadata.create_all(self.engine, checkfirst=True)
 
     def insert_message(self, message):
-        sql = "INSERT INTO messages (message) VALUES (%(message)s);"
-        print (sql)
-        print (message)
+        
+        print(message.to_sql('messages', con=self.engine, if_exists='replace',
+          index=False))
+
+    def close_connection(self):
+        self.conn.commit()
+        self.conn.close()
 
 if __name__ == '__main__':
     insert_message = InsertMessage()
@@ -20,3 +41,4 @@ if __name__ == '__main__':
     print(sys.argv[1])
     message = json_normalize(json.loads(sys.argv[1]))
     insert_message.insert_message(message)
+    insert_message.close_connection()

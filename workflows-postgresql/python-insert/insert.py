@@ -1,8 +1,8 @@
-import psycopg2
 import os
 import sys
 import json
 from pandas import json_normalize
+from sqlalchemy import create_engine, Table, Column, Integer, String, MetaData
 
 class InsertMessage:
     def __init__(self):
@@ -12,23 +12,24 @@ class InsertMessage:
         self.p_port = os.getenv('POSTGRES_PORT')
         self.p_db = os.getenv('POSTGRES_DB')
         self.conn_string = f"postgresql://{self.p_user}:{self.p_password}@{self.p_host}:{self.p_port}/{self.p_db}"
-        self.conn = psycopg2.connect(self.conn_string)
-        self.cursor = self.conn.cursor()
+        
+        self.engine = create_engine(self.conn_string)
+        self.metadata = MetaData()
+        self.conn = self.engine.connect()
 
     def create_table(self):
-        sql = "CREATE TABLE IF NOT EXISTS messages (message VARCHAR(255));"
-        self.cursor.execute(sql)
-        print(self.cursor.statusmessage)
+        messageTable = Table('messages', 
+                             self.metadata,
+                             Column('message', String))
+        self.metadata.create_all(self.engine, checkfirst=True)
 
     def insert_message(self, message):
-        sql = "INSERT INTO messages (message) VALUES (%(message)s);"
-        param = {'message': message}
-        self.cursor.execute(sql, param)
-        print(self.cursor.statusmessage)
+        
+        print(message.to_sql('messages', con=self.engine, if_exists='replace',
+          index=False))
 
     def close_connection(self):
         self.conn.commit()
-        self.cursor.close()
         self.conn.close()
 
 if __name__ == '__main__':
